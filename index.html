@@ -1,0 +1,1514 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TDP Planner Update Portal</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@300;400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap');
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --navy:#0D2137;--blue:#1A4B8C;--lblue:#D6E4F7;--teal:#0F6E56;--lteal:#D4F0E8;
+  --amber:#BA7517;--lamber:#FFF3D6;--red:#A32D2D;--lred:#FDEAEA;
+  --green:#27500A;--lgreen:#EAF3DE;--gray:#5F5E5A;--lgray:#F1EFE8;
+  --white:#FFFFFF;--bg:#F4F6FA;--border:#DDE1E9;--text:#1A1A2E;--muted:#6B7280;
+  --card:#ffffff;
+}
+body{font-family:'IBM Plex Sans',sans-serif;font-size:13px;background:var(--bg);color:var(--text);min-height:100vh}
+
+/* ── HEADER ── */
+#app-header{background:var(--navy);padding:0 24px;height:56px;display:flex;align-items:center;gap:16px;position:sticky;top:0;z-index:100;box-shadow:0 2px 12px rgba(0,0,0,.25)}
+.hdr-logo{color:#fff;font-size:15px;font-weight:700;letter-spacing:-.01em}
+.hdr-logo span{color:#4A9EFF}
+.hdr-sep{width:1px;height:24px;background:rgba(255,255,255,.15)}
+.hdr-sub{color:rgba(255,255,255,.5);font-size:12px}
+.hdr-space{flex:1}
+.hdr-badge{background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.2);color:#fff;font-size:11px;padding:4px 12px;border-radius:20px}
+#sync-status{font-size:11px;padding:4px 12px;border-radius:20px;font-weight:500;display:none}
+#sync-status.ok{background:#D4F0E8;color:#0F6E56;display:block}
+#sync-status.err{background:#FDEAEA;color:#A32D2D;display:block}
+#sync-status.busy{background:#FFF3D6;color:#BA7517;display:block}
+
+/* ── SETUP SCREEN ── */
+#setup-screen{max-width:520px;margin:60px auto;padding:0 20px}
+.setup-card{background:var(--card);border:1px solid var(--border);border-radius:16px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,.08)}
+.setup-top{background:var(--navy);padding:32px;text-align:center}
+.setup-top .logo{font-size:22px;font-weight:700;color:#fff;margin-bottom:6px}
+.setup-top .logo span{color:#4A9EFF}
+.setup-top p{color:rgba(255,255,255,.6);font-size:12.5px}
+.setup-body{padding:28px}
+.setup-label{font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px}
+.setup-select{width:100%;padding:11px 14px;border:1.5px solid var(--border);border-radius:8px;font-size:13.5px;font-family:inherit;background:#fff;color:var(--text);cursor:pointer;appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%236B7280' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 12px center;transition:border-color .15s}
+.setup-select:focus{outline:none;border-color:var(--blue)}
+.setup-input{width:100%;padding:11px 14px;border:1.5px solid var(--border);border-radius:8px;font-size:13px;font-family:'IBM Plex Mono',monospace;background:#fff;color:var(--text);transition:border-color .15s;margin-top:4px}
+.setup-input:focus{outline:none;border-color:var(--blue)}
+.setup-input::placeholder{color:#bbb;font-family:'IBM Plex Sans',sans-serif}
+.setup-hint{font-size:11px;color:var(--muted);margin-top:6px;line-height:1.5}
+.setup-hint a{color:var(--blue);text-decoration:none}
+.setup-btn{width:100%;padding:13px;background:var(--blue);color:#fff;border:none;border-radius:8px;font-size:14px;font-weight:600;font-family:inherit;cursor:pointer;margin-top:20px;transition:all .15s}
+.setup-btn:hover{background:#1a3d7a;transform:translateY(-1px)}
+.setup-btn:disabled{background:#ccc;cursor:not-allowed;transform:none}
+.divider{height:1px;background:var(--border);margin:20px 0}
+.setup-row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+
+/* ── MAIN APP ── */
+#main-app{display:none}
+
+/* ── TOP NAV STEPS ── */
+#step-nav{background:#fff;border-bottom:1px solid var(--border);padding:0 24px;display:flex;align-items:center;gap:4px;overflow-x:auto}
+.step-btn{display:flex;align-items:center;gap:7px;padding:14px 16px;font-size:12px;font-weight:500;color:var(--muted);cursor:pointer;border-bottom:2px solid transparent;white-space:nowrap;transition:all .15s;background:none;border-top:none;border-left:none;border-right:none;font-family:inherit}
+.step-btn:hover{color:var(--navy)}
+.step-btn.active{color:var(--blue);border-bottom-color:var(--blue);font-weight:600}
+.step-btn.done{color:var(--teal)}
+.step-btn .sn{width:18px;height:18px;border-radius:50%;background:var(--lgray);color:var(--muted);font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.step-btn.active .sn{background:var(--blue);color:#fff}
+.step-btn.done .sn{background:var(--teal);color:#fff}
+
+/* ── CONTENT ── */
+#app-content{padding:20px 24px;max-width:900px;margin:0 auto}
+
+/* ── PROJECT SELECTOR ── */
+#project-bar{background:#fff;border:1px solid var(--border);border-radius:10px;padding:14px 18px;margin-bottom:16px;display:flex;align-items:center;gap:12px}
+#project-bar label{font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;white-space:nowrap}
+#proj-select{flex:1;padding:8px 12px;border:1.5px solid var(--border);border-radius:7px;font-size:13px;font-family:inherit;background:#fff;cursor:pointer}
+#proj-select:focus{outline:none;border-color:var(--blue)}
+.proj-meta{display:flex;gap:8px}
+.proj-tag{padding:3px 9px;border-radius:12px;font-size:11px;font-weight:600}
+.tag-ugc{background:#D6E4F7;color:#1A4B8C}
+.tag-ohtl{background:#FFF3D6;color:#BA7517}
+.tag-ss{background:#D4F0E8;color:#0F6E56}
+
+/* ── SECTION CARDS ── */
+.sec-card{background:#fff;border:1px solid var(--border);border-radius:10px;margin-bottom:14px;overflow:hidden}
+.sec-head{padding:13px 18px;display:flex;align-items:center;gap:10px;border-bottom:1px solid var(--border);background:#FAFBFD}
+.sec-icon{font-size:15px;width:28px;text-align:center}
+.sec-title{font-size:13px;font-weight:600;color:var(--navy);flex:1}
+.sec-badge{font-size:10px;font-weight:600;padding:2px 8px;border-radius:10px;background:var(--lblue);color:var(--blue)}
+.sec-body{padding:18px}
+
+/* ── FORM GRID ── */
+.fg{display:grid;gap:12px}
+.fg-2{grid-template-columns:1fr 1fr}
+.fg-3{grid-template-columns:1fr 1fr 1fr}
+.fg-4{grid-template-columns:1fr 1fr 1fr 1fr}
+@media(max-width:640px){.fg-2,.fg-3,.fg-4{grid-template-columns:1fr 1fr}}
+@media(max-width:420px){.fg-2,.fg-3,.fg-4{grid-template-columns:1fr}}
+
+.fld{display:flex;flex-direction:column;gap:5px}
+.fld label{font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.04em}
+.fld input,.fld select,.fld textarea{padding:8px 10px;border:1.5px solid var(--border);border-radius:7px;font-size:13px;font-family:inherit;background:#fff;color:var(--text);transition:border-color .15s}
+.fld input:focus,.fld select:focus,.fld textarea:focus{outline:none;border-color:var(--blue)}
+.fld textarea{resize:vertical;min-height:60px}
+.fld input[type=number]{-moz-appearance:textfield}
+.fld input[type=number]::-webkit-outer-spin-button,.fld input[type=number]::-webkit-inner-spin-button{-webkit-appearance:none}
+.fld .hint{font-size:10.5px;color:var(--muted);margin-top:2px}
+
+/* ── PROG BAR VISUAL ── */
+.prog-visual{height:6px;background:#eee;border-radius:3px;margin-top:4px;overflow:hidden}
+.prog-plan{height:100%;background:var(--blue);border-radius:3px;transition:width .3s}
+.prog-actual{height:6px;background:var(--teal);border-radius:3px;margin-top:2px;transition:width .3s}
+
+/* ── STATUS ROW ── */
+.stat-row{display:flex;gap:8px;flex-wrap:wrap;margin-top:4px}
+.stat-chip{padding:5px 12px;border-radius:20px;font-size:12px;font-weight:500;cursor:pointer;border:1.5px solid transparent;transition:all .15s}
+.stat-chip.sel-OnTrack{background:#D4F0E8;color:#0F6E56;border-color:#0F6E56}
+.stat-chip.sel-AtRisk{background:#FFF3D6;color:#BA7517;border-color:#BA7517}
+.stat-chip.sel-Delayed{background:#FDEAEA;color:#A32D2D;border-color:#A32D2D}
+.stat-chip:not([class*="sel-"]){background:#f5f5f5;color:#888}
+.stat-chip:hover{opacity:.85}
+
+/* ── DISCIPLINE ROWS ── */
+.disc-row{display:grid;grid-template-columns:140px 1fr 1fr 140px;gap:10px;align-items:center;padding:10px 0;border-bottom:1px solid #F0F2F6}
+.disc-row:last-child{border-bottom:none}
+.disc-label{font-size:12px;font-weight:600;color:var(--navy);display:flex;align-items:center;gap:6px}
+.disc-bar{display:flex;flex-direction:column;gap:3px}
+.disc-bar-wrap{height:5px;background:#eee;border-radius:3px;overflow:hidden}
+.disc-bar-fill{height:100%;border-radius:3px;transition:width .3s}
+
+/* ── PROCUREMENT TABLE ── */
+.pro-section{margin-bottom:16px}
+.pro-section-title{font-size:11px;font-weight:700;color:var(--navy);text-transform:uppercase;letter-spacing:.05em;padding:8px 0 6px;border-bottom:1px solid var(--border);margin-bottom:10px;display:flex;align-items:center;gap:6px}
+.pro-items{display:flex;flex-direction:column;gap:6px}
+.pro-item{display:grid;grid-template-columns:1fr 120px 100px;gap:8px;align-items:center}
+.pro-item input,.pro-item select{padding:6px 9px;border:1.5px solid var(--border);border-radius:6px;font-size:12.5px;font-family:inherit}
+.pro-item input:focus,.pro-item select:focus{outline:none;border-color:var(--blue)}
+.add-item-btn{margin-top:6px;padding:5px 12px;background:var(--lgray);border:1px dashed var(--border);border-radius:6px;font-size:11.5px;color:var(--muted);cursor:pointer;font-family:inherit;transition:all .15s}
+.add-item-btn:hover{background:var(--lblue);color:var(--blue);border-color:var(--blue)}
+.del-item-btn{padding:4px 8px;background:#fff;border:1px solid #f5c6c6;border-radius:5px;color:var(--red);font-size:11px;cursor:pointer;font-family:inherit}
+.del-item-btn:hover{background:var(--lred)}
+
+/* ── ISSUE ROWS ── */
+.issue-row{display:grid;grid-template-columns:1fr 100px 90px 32px;gap:8px;align-items:start;padding:8px 0;border-bottom:1px solid #F0F2F6}
+.issue-row:last-child{border-bottom:none}
+.issue-row textarea{min-height:46px}
+.issue-row input,.issue-row select{padding:6px 9px;border:1.5px solid var(--border);border-radius:6px;font-size:12.5px;font-family:inherit}
+.issue-row input:focus,.issue-row select:focus{outline:none;border-color:var(--blue)}
+
+/* ── BOTTOM ACTIONS ── */
+#bottom-bar{position:sticky;bottom:0;background:#fff;border-top:1px solid var(--border);padding:12px 24px;display:flex;align-items:center;gap:10px;box-shadow:0 -2px 12px rgba(0,0,0,.06)}
+.btn-save{padding:10px 24px;background:var(--blue);color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:600;font-family:inherit;cursor:pointer;transition:all .15s;display:flex;align-items:center;gap:7px}
+.btn-save:hover{background:#1a3d7a;transform:translateY(-1px)}
+.btn-save:disabled{background:#ccc;cursor:not-allowed;transform:none}
+.btn-prev,.btn-next{padding:9px 18px;border:1.5px solid var(--border);border-radius:8px;font-size:13px;font-weight:500;font-family:inherit;cursor:pointer;background:#fff;color:var(--text);transition:all .15s}
+.btn-prev:hover,.btn-next:hover{border-color:var(--blue);color:var(--blue)}
+.btn-submit{padding:10px 24px;background:var(--teal);color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:600;font-family:inherit;cursor:pointer;transition:all .15s}
+.btn-submit:hover{background:#0a5a45}
+#save-msg{font-size:12px;color:var(--teal);display:none;align-items:center;gap:5px}
+#save-msg.show{display:flex}
+.bar-space{flex:1}
+.bar-info{font-size:11.5px;color:var(--muted)}
+
+/* ── PROGRESS INDICATOR ── */
+.prog-indicator{background:#fff;border:1px solid var(--border);border-radius:10px;padding:12px 18px;margin-bottom:14px;display:flex;align-items:center;gap:12px}
+.prog-indicator label{font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;white-space:nowrap}
+.prog-track{flex:1;height:6px;background:var(--border);border-radius:3px;overflow:hidden}
+.prog-fill{height:100%;background:var(--blue);border-radius:3px;transition:width .4s}
+.prog-pct{font-size:12px;font-weight:600;color:var(--blue);white-space:nowrap;font-family:'IBM Plex Mono',monospace}
+
+/* ── SUCCESS SCREEN ── */
+#success-screen{display:none;max-width:480px;margin:80px auto;padding:0 20px;text-align:center}
+.success-card{background:#fff;border:1px solid var(--border);border-radius:16px;padding:40px;box-shadow:0 4px 24px rgba(0,0,0,.08)}
+.success-icon{font-size:48px;margin-bottom:16px}
+.success-card h2{font-size:20px;font-weight:700;color:var(--navy);margin-bottom:8px}
+.success-card p{color:var(--muted);font-size:13px;line-height:1.6;margin-bottom:20px}
+.btn-another{padding:10px 24px;background:var(--blue);color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:600;font-family:inherit;cursor:pointer}
+
+/* ── TOAST ── */
+#toast{position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:var(--navy);color:#fff;padding:10px 20px;border-radius:8px;font-size:12.5px;font-weight:500;opacity:0;transition:opacity .25s;pointer-events:none;z-index:999;white-space:nowrap}
+#toast.show{opacity:1}
+
+/* ── SPI MONTH GRID ── */
+.spi-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+.spi-month{display:flex;flex-direction:column;gap:5px}
+.spi-month label{font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase}
+.spi-val{font-family:'IBM Plex Mono',monospace;font-size:13.5px;font-weight:600;color:var(--text)}
+.spi-chip{display:inline-block;padding:2px 8px;border-radius:10px;font-size:10.5px;font-weight:600;margin-top:2px}
+.spi-good{background:var(--lteal);color:var(--teal)}
+.spi-warn{background:var(--lamber);color:var(--amber)}
+.spi-crit{background:var(--lred);color:var(--red)}
+
+/* ── PLANNER INFO BOX ── */
+.planner-info{background:var(--lblue);border:1px solid #c5d9f0;border-radius:8px;padding:12px 16px;margin-bottom:16px;display:flex;align-items:center;gap:12px}
+.pi-avatar{width:36px;height:36px;border-radius:50%;background:var(--blue);color:#fff;font-size:14px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.pi-name{font-size:13.5px;font-weight:600;color:var(--navy)}
+.pi-meta{font-size:11.5px;color:var(--muted);margin-top:1px}
+
+/* ── GAS URL CONFIG ── */
+.gas-setup{background:var(--lamber);border:1px solid #f5d38a;border-radius:8px;padding:12px 16px;font-size:12px;color:var(--amber);margin-bottom:12px}
+.gas-setup strong{display:block;margin-bottom:4px}
+
+/* ── COLLAPSIBLE ── */
+.col-toggle{cursor:pointer;user-select:none}
+.col-toggle::after{content:' ▾';font-size:10px;color:var(--muted)}
+.col-toggle.collapsed::after{content:' ▸'}
+.col-body{transition:all .2s}
+.col-body.hidden{display:none}
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<div id="app-header">
+  <div class="hdr-logo">TDP <span>Planner</span> Portal</div>
+  <div class="hdr-sep"></div>
+  <div class="hdr-sub">Monthly Data Update</div>
+  <div class="hdr-space"></div>
+  <div id="sync-status"></div>
+  <div class="hdr-badge" id="hdr-planner-badge" style="display:none"></div>
+</div>
+
+<!-- SETUP SCREEN -->
+<div id="setup-screen">
+  <div class="setup-card">
+    <div class="setup-top">
+      <div class="logo">TDP <span>Project Intelligence</span></div>
+      <p>Planner Monthly Data Update Portal</p>
+    </div>
+    <div class="setup-body">
+      <div style="margin-bottom:16px">
+        <div class="setup-label">Select Your Name</div>
+        <select class="setup-select" id="sel-planner">
+          <option value="">— Choose your name —</option>
+          <option>Amr Yasser</option>
+          <option>Ahmed Khaled</option>
+          <option>Ahmed Sayed</option>
+          <option>Hisham Mahmoud Diab</option>
+          <option>Jemenile Q. Dayon</option>
+          <option>Mohamed Abdallah</option>
+          <option>Mohamed Medhat</option>
+          <option>Mohamed Sherif</option>
+          <option>Mohamed Yahia</option>
+          <option>Ahmed Reda</option>
+          <option>Mostafa Mahmoud Ali</option>
+          <option>Osama Al-Ghamdi</option>
+          <option>Mohamed Khaled</option>
+          <option>Ahmed Abdelaziz</option>
+          <option>Abdelrahman</option>
+          <option>Mohammed Ammar</option>
+          <option>Garry Pontanal</option>
+          <option>Eng Fahad</option>
+        </select>
+      </div>
+
+
+
+      <div style="margin-bottom:4px">
+        <div class="setup-label">Update Month</div>
+        <div class="setup-row">
+          <select class="setup-select" id="sel-month">
+            <option value="Jan">January</option><option value="Feb">February</option>
+            <option value="Mar">March</option><option value="Apr" selected>April</option>
+            <option value="May">May</option><option value="Jun">June</option>
+            <option value="Jul">July</option><option value="Aug">August</option>
+            <option value="Sep">September</option><option value="Oct">October</option>
+            <option value="Nov">November</option><option value="Dec">December</option>
+          </select>
+          <select class="setup-select" id="sel-year">
+            <option value="2025">2025</option>
+            <option value="2026" selected>2026</option>
+            <option value="2027">2027</option>
+          </select>
+        </div>
+      </div>
+
+      <button class="setup-btn" onclick="startApp()">▶ Start Updating My Projects</button>
+    </div>
+  </div>
+</div>
+
+<!-- GAS HELP MODAL -->
+<div id="gas-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:200;overflow-y:auto">
+  <div style="max-width:560px;margin:40px auto;padding:0 20px">
+    <div style="background:#fff;border-radius:12px;padding:28px">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
+        <h3 style="font-size:15px;font-weight:700;color:var(--navy)">Setting Up Google Apps Script</h3>
+        <button onclick="document.getElementById('gas-modal').style.display='none'" style="background:none;border:none;font-size:18px;cursor:pointer;color:var(--muted)">✕</button>
+      </div>
+      <div style="font-size:12.5px;line-height:1.8;color:var(--text)">
+        <p><strong>Step 1:</strong> Open <a href="https://sheets.google.com" target="_blank" style="color:var(--blue)">Google Sheets</a> → Create new sheet named <code style="background:#f5f5f5;padding:2px 5px;border-radius:3px">TDP_Planner_Data</code></p>
+        <br>
+        <p><strong>Step 2:</strong> In the sheet, go to <strong>Extensions → Apps Script</strong></p>
+        <br>
+        <p><strong>Step 3:</strong> Replace all code with the Apps Script code (download button below)</p>
+        <br>
+        <p><strong>Step 4:</strong> Click <strong>Deploy → New Deployment</strong> → Type: <strong>Web App</strong> → Execute as: <strong>Me</strong> → Who has access: <strong>Anyone</strong></p>
+        <br>
+        <p><strong>Step 5:</strong> Copy the Web App URL and paste it above</p>
+        <br>
+        <div style="background:var(--lamber);border-radius:6px;padding:10px 14px;font-size:12px;color:var(--amber)">
+          ⚠️ Each time you change the script, create a <strong>New Deployment</strong> (not update) to get a fresh URL.
+        </div>
+        <br>
+        <button onclick="downloadGasScript()" style="padding:10px 20px;background:var(--blue);color:#fff;border:none;border-radius:7px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit">⬇ Download Apps Script Code</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- MAIN APP -->
+<div id="main-app">
+
+  <!-- STEP NAV -->
+  <div id="step-nav">
+    <button class="step-btn active" onclick="goStep(0)" id="sn0"><span class="sn">1</span> Overview</button>
+    <button class="step-btn" onclick="goStep(1)" id="sn1"><span class="sn">2</span> Engineering</button>
+    <button class="step-btn" onclick="goStep(2)" id="sn2"><span class="sn">3</span> Procurement</button>
+    <button class="step-btn" onclick="goStep(3)" id="sn3"><span class="sn">4</span> Construction</button>
+    <button class="step-btn" onclick="goStep(4)" id="sn4"><span class="sn">5</span> Manpower</button>
+    <button class="step-btn" onclick="goStep(5)" id="sn5"><span class="sn">6</span> Forecast</button>
+    <button class="step-btn" onclick="goStep(6)" id="sn6"><span class="sn">7</span> SPI & Issues</button>
+  </div>
+
+  <!-- CONTENT -->
+  <div id="app-content">
+
+    <!-- PLANNER INFO -->
+    <div class="planner-info" id="planner-info-box">
+      <div class="pi-avatar" id="pi-avatar">M</div>
+      <div>
+        <div class="pi-name" id="pi-name-lbl">—</div>
+        <div class="pi-meta" id="pi-projects-lbl">0 projects assigned</div>
+      </div>
+    </div>
+
+    <!-- PROGRESS INDICATOR -->
+    <div class="prog-indicator">
+      <label>Form Progress</label>
+      <div class="prog-track"><div class="prog-fill" id="form-prog-fill" style="width:0%"></div></div>
+      <div class="prog-pct" id="form-prog-pct">0%</div>
+    </div>
+
+    <!-- PROJECT SELECTOR -->
+    <div id="project-bar">
+      <label>PROJECT</label>
+      <select id="proj-select" onchange="selectProject()">
+        <option value="">— Select Project —</option>
+      </select>
+      <div class="proj-meta" id="proj-meta"></div>
+    </div>
+
+    <!-- STEP PANELS -->
+    <div id="step-0"><!-- OVERVIEW --></div>
+    <div id="step-1" style="display:none"><!-- ENGINEERING --></div>
+    <div id="step-2" style="display:none"><!-- PROCUREMENT --></div>
+    <div id="step-3" style="display:none"><!-- CONSTRUCTION --></div>
+    <div id="step-4" style="display:none"><!-- MANPOWER --></div>
+    <div id="step-5" style="display:none"><!-- FORECAST --></div>
+    <div id="step-6" style="display:none"><!-- SPI & ISSUES --></div>
+
+  </div>
+
+  <!-- BOTTOM BAR -->
+  <div id="bottom-bar">
+    <button class="btn-prev" onclick="prevStep()">← Prev</button>
+    <button class="btn-next" onclick="nextStep()">Next →</button>
+    <div class="bar-space"></div>
+    <div id="save-msg">✓ Saved locally</div>
+    <div class="bar-info" id="bar-info">Step 1 / 7</div>
+    <button class="btn-save" onclick="saveProject()">💾 Save Project</button>
+    <button class="btn-submit" onclick="submitAll()" id="btn-submit-all">✈ Submit</button>
+  </div>
+</div>
+
+<!-- SUCCESS SCREEN -->
+<div id="success-screen">
+  <div class="success-card">
+    <div class="success-icon">✅</div>
+    <h2>Data Submitted!</h2>
+    <p id="success-msg">Your project data has been sent to the TDP Intelligence Google Sheet. Mohamed will be notified.</p>
+    <button class="btn-another" onclick="resetApp()">Update Another Month</button>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+// ─── PLANNER → PROJECT MAPPING (from Intelligence App) ─────────────────────
+const PLANNER_PROJECTS = {
+  "Amr Yasser":          ["OHTL 02","OHTL01","9078"],
+  "Ahmed Khaled":        ["Jizan","Bayan","Mawqaq"],
+  "Ahmed Sayed":         ["ULA UG","ULA Ohtl 02","UG01"],
+  "Hisham Mahmoud Diab": ["Asir","Alnazeem","9014","UG02"],
+  "Jemenile Q. Dayon":   ["9017","9027","SALWA","Rabaaa_Rames"],
+  "Mohamed Abdallah":    ["Protection","Uraidh OHTL(1)"],
+  "Mohamed Medhat":      ["8370","8371","8372","8373","Samha BSP"],
+  "Mohamed Sherif":      ["Busaita 132 KV","Busaita B OHTL","Busaita C OHTL"],
+  "Mohamed Yahia":       ["Aramco","Damm_Khob","Mahasen"],
+  "Ahmed Reda":          ["Busaita B OHTL","Busaita C OHTL"],
+  "Mostafa Mahmoud Ali": ["MBS02","MBS04","Hariq","Busaita 380","Busit 132"],
+  "Osama Al-Ghamdi":     ["New Shaqra"],
+  "Mohamed Khaled":      ["Baida Nathel BSP","Hota"],
+  "Ahmed Abdelaziz":     ["Al Qirah"],
+  "Abdelrahman":         ["Al Qirah"],
+  "Mohammed Ammar":      ["Rumah 380 KV OHTL","Busaita 380 KV"],
+  "Garry Pontanal":      ["Busaita 380 KV"],
+  "Eng Fahad":           ["CCTV Department"]
+};
+
+// ─── PROJECT METADATA ───────────────────────────────────────────────────────
+const PROJECT_META = {
+  "MBS02":{"name":"Line 360 MBS2 Contract 15130","type":"UGC","region":"Central","contract":32,"elapsed":57,"eot":41},
+  "MBS04":{"name":"Line 360 MBS4 Contract 15006","type":"UGC","region":"Central","contract":24,"elapsed":58,"eot":43},
+  "UG01":{"name":"Connection Qiddiya-SS 8370 UG(1)","type":"UGC","region":"Central","contract":14,"elapsed":39,"eot":11},
+  "Aramco":{"name":"Power Supply To ARAMCO Sub(40)","type":"UGC","region":"Eastern","contract":16,"elapsed":51,"eot":0},
+  "Uraidh OHTL(1)":{"name":"Uraidh OHTL(1)","type":"OHTL","region":"Central","contract":22,"elapsed":61,"eot":27},
+  "Protection":{"name":"33KV Protection Contract 15011","type":"UGC","region":"Central","contract":19,"elapsed":58,"eot":43},
+  "Hota":{"name":"Hota S/S 8720","type":"UGC","region":"Central","contract":18,"elapsed":67,"eot":50},
+  "9014":{"name":"Mawthuqia 9014","type":"UGC","region":"Central","contract":18,"elapsed":35,"eot":15},
+  "9017":{"name":"Mawthuqia 9017","type":"UGC","region":"Central","contract":18,"elapsed":35,"eot":18},
+  "9027":{"name":"Mawthuqia 9027","type":"UGC","region":"Central","contract":18,"elapsed":35,"eot":13},
+  "UG02":{"name":"Connection Qiddiya SS(8370-8373) UG2","type":"UGC","region":"Central","contract":22,"elapsed":35,"eot":16},
+  "OHTL 02":{"name":"Construction Qiddiya SS9078 & AlJillah","type":"OHTL","region":"Central","contract":22,"elapsed":35,"eot":26},
+  "OHTL01":{"name":"Construction Qiddiya SS9078 & SS9013","type":"OHTL","region":"Central","contract":22,"elapsed":35,"eot":26},
+  "Asir":{"name":"Asir UG - North Abha","type":"UGC","region":"Southern","contract":14,"elapsed":35,"eot":24},
+  "Alnazeem":{"name":"Alnazeem","type":"UGC","region":"Central","contract":14,"elapsed":35,"eot":13},
+  "Rames":{"name":"Rames","type":"UGC","region":"Eastern","contract":14,"elapsed":35,"eot":17},
+  "ULA UG":{"name":"ULA","type":"UGC","region":"Western","contract":24,"elapsed":35,"eot":31},
+  "New Shaqra":{"name":"New Shaqra","type":"OHTL","region":"Central","contract":18,"elapsed":35,"eot":0},
+  "SALWA":{"name":"SALWA","type":"OHTL","region":"Eastern","contract":22,"elapsed":35,"eot":0},
+  "Busaita 380 KV":{"name":"Busaita 380 KV OHTL","type":"OHTL","region":"Eastern","contract":22,"elapsed":35,"eot":0},
+  "Busaita 132 KV":{"name":"Busaita 132 KV OHTL","type":"OHTL","region":"Eastern","contract":21,"elapsed":35,"eot":9},
+  "Rumah 380 KV OHTL":{"name":"Rumah 380 KV OHTL","type":"OHTL","region":"Central","contract":32,"elapsed":35,"eot":0},
+  "ULA Ohtl 02":{"name":"ULA OHTL 02","type":"OHTL","region":"Western","contract":24,"elapsed":35,"eot":0},
+  "King Salman Park":{"name":"King Salman Park","type":"UGC","region":"Central","contract":1,"elapsed":0,"eot":0},
+  "Rabaaa_Rames":{"name":"Rames and Rabia BSP","type":"UGC","region":"Eastern","contract":16,"elapsed":35,"eot":0},
+  "Busaita B OHTL":{"name":"Construction 132kV OHTL Busita-B","type":"OHTL","region":"Eastern","contract":1,"elapsed":0,"eot":0},
+  "Busaita C OHTL":{"name":"Construction 132kV OHTL Busita-C","type":"OHTL","region":"Eastern","contract":1,"elapsed":0,"eot":0},
+  "Jizan":{"name":"Housing Project M.O.D Jizan","type":"SS","region":"Southern","contract":24,"elapsed":35,"eot":16},
+  "Bayan":{"name":"AL-BAIAN S/S Contract 9097","type":"SS","region":"Central","contract":20,"elapsed":35,"eot":37},
+  "Damm_Khob":{"name":"Dammam Khobar CNT 16886","type":"SS","region":"Eastern","contract":28,"elapsed":35,"eot":28},
+  "Hariq":{"name":"Al Hariq - Al Kharj StS 8724","type":"SS","region":"Central","contract":22,"elapsed":35,"eot":10},
+  "9078":{"name":"Qiddiya S/S - 9078","type":"SS","region":"Central","contract":23,"elapsed":35,"eot":26},
+  "8370":{"name":"Qiddiya S/S - 8370","type":"SS","region":"Central","contract":15,"elapsed":35,"eot":12},
+  "8371":{"name":"Qiddiya S/S - 8371","type":"SS","region":"Central","contract":23,"elapsed":35,"eot":16},
+  "8372":{"name":"Qiddiya S/S - 8372","type":"SS","region":"Central","contract":23,"elapsed":35,"eot":16},
+  "8373":{"name":"Qiddiya S/S - 8373","type":"SS","region":"Central","contract":23,"elapsed":35,"eot":16},
+  "Mahasen":{"name":"Construction of Mahasen","type":"SS","region":"Eastern","contract":22,"elapsed":35,"eot":12},
+  "Busaita 380":{"name":"BUSAITA FARMS 380/132/13.8KV BSP","type":"SS","region":"Eastern","contract":24,"elapsed":35,"eot":6},
+  "Busit 132":{"name":"Busiata-A 132/33kV Substation","type":"SS","region":"Eastern","contract":22,"elapsed":35,"eot":9},
+  "Al Qirah":{"name":"New Al Qirah 380 KV BSP","type":"SS","region":"Central","contract":33,"elapsed":35,"eot":0},
+  "Mawqaq":{"name":"MAWQAQ PSP 9057 BSP","type":"SS","region":"Central","contract":33,"elapsed":35,"eot":5},
+  "Baida Nathel BSP":{"name":"Baida Nathel BSP","type":"SS","region":"Central","contract":33,"elapsed":35,"eot":0},
+  "Samha BSP":{"name":"Samha BSP","type":"SS","region":"Central","contract":21,"elapsed":35,"eot":0},
+  "Busita B SS":{"name":"Construction Busita-B 132/33kV SS","type":"SS","region":"Eastern","contract":18,"elapsed":35,"eot":0},
+  "Busita C SS":{"name":"Construction Busita-C 132/33kV SS","type":"SS","region":"Eastern","contract":18,"elapsed":35,"eot":0},
+  "CCTV Department":{"name":"CCTV Department","type":"OHTL","region":"Central","contract":12,"elapsed":0,"eot":0}
+};
+
+// ─── APP STATE ───────────────────────────────────────────────────────────────
+var STATE = {
+  planner: '',
+  month: 'Apr',
+  year: '2026',
+  gasUrl: 'https://script.google.com/macros/s/AKfycbwpW58odbf0gayRTpNlenaDQTq2EBYx2jl1nOV2cBHKDVD4ubZP8GtIgzf4Pn3GADGLUg/exec',
+  projects: [],
+  currentProject: '',
+  currentStep: 0,
+  data: {}  // { code: { overview:{}, eng:{}, pro:{}, con:{}, mp:{}, forecast:{}, spi:{}, issues:[] } }
+};
+
+// ─── START APP ───────────────────────────────────────────────────────────────
+function startApp(){
+  var p = document.getElementById('sel-planner').value;
+  if(!p){ toast('Please select your name'); return; }
+  
+  STATE.planner = p;
+  STATE.month = document.getElementById('sel-month').value;
+  STATE.year = document.getElementById('sel-year').value;
+  STATE.projects = PLANNER_PROJECTS[p] || [];
+
+  // Init data store
+  STATE.projects.forEach(function(code){
+    if(!STATE.data[code]) STATE.data[code] = defaultData(code);
+  });
+
+  // Load saved state if any
+  loadFromLocalStorage();
+
+  document.getElementById('setup-screen').style.display = 'none';
+  document.getElementById('main-app').style.display = 'block';
+  document.getElementById('hdr-planner-badge').style.display = 'block';
+  document.getElementById('hdr-planner-badge').textContent = p;
+
+  // Planner info
+  document.getElementById('pi-avatar').textContent = p.charAt(0);
+  document.getElementById('pi-name-lbl').textContent = p;
+  document.getElementById('pi-projects-lbl').textContent = STATE.projects.length + ' project(s) assigned — ' + STATE.month + ' ' + STATE.year;
+
+  // Populate project select
+  var sel = document.getElementById('proj-select');
+  sel.innerHTML = '<option value="">— Select Project —</option>';
+  STATE.projects.forEach(function(code){
+    var m = PROJECT_META[code] || {};
+    var opt = document.createElement('option');
+    opt.value = code;
+    opt.textContent = code + ' — ' + (m.name || code);
+    sel.appendChild(opt);
+  });
+
+  // Auto-select first project
+  if(STATE.projects.length > 0){
+    sel.value = STATE.projects[0];
+    selectProject();
+  }
+
+  goStep(0);
+  updateProgress();
+}
+
+function defaultData(code){
+  return {
+    overview:  {status:'On Track',spi:1.0,eot:0,eng_plan:0,eng_actual:0,pro_plan:0,pro_actual:0,con_plan:0,con_actual:0,remarks:'',
+                 start_date:'',orig_finish:'',elapsed_months:0,contract_months:0,remaining_months:0,eot_status:'',fc_finish:'TBD'},
+    eng:       {plan:0,actual:0,milestone:'IFC Drawings',mStatus:'In Progress',disciplines:{eng:{p:0,a:0,status:'In Progress'},civil:{p:0,a:0,status:'In Progress'},inst:{p:0,a:0,status:'In Progress'},test:{p:0,a:0,status:'Not Started'}}},
+    pro:       {plan:0,actual:0,risk:'Low',pos:[],mfr:[],fat:[],delivery:[]},
+    con:       {plan:0,actual:0,civil_a:0,elec_a:0,
+                 disciplines:{civil:{p:0,a:0,status:'In Progress'},mech:{p:0,a:0,status:'Not Started'},elec:{p:0,a:0,status:'In Progress'},test:{p:0,a:0,status:'Not Started'}},
+                 scopes:[], // dynamic scopes per project type
+                 achieved:'',delayed:'',issues_txt:''},
+    mp:        {mpP:0,mpA:0,eqP:0,eqA:0,constraint:'',sub:''},
+    forecast:  {civil:'TBD',elec:'TBD',overall:'TBD',baseline:'TBD',varDays:0,conf:'Medium'},
+    spi:       {jan:1.0,feb:1.0,mar:1.0,apr:1.0,status:'Good'},
+    issues:    []
+  };
+}
+
+// ─── PROJECT SELECTION ───────────────────────────────────────────────────────
+function selectProject(){
+  var code = document.getElementById('proj-select').value;
+  if(!code) return;
+  STATE.currentProject = code;
+  var m = PROJECT_META[code] || {};
+  var typeTag = m.type === 'UGC' ? 'tag-ugc' : m.type === 'OHTL' ? 'tag-ohtl' : 'tag-ss';
+  document.getElementById('proj-meta').innerHTML =
+    '<span class="proj-tag ' + typeTag + '">' + (m.type||'') + '</span>' +
+    '<span class="proj-tag" style="background:#f0f0f0;color:#555">' + (m.region||'') + '</span>';
+  renderCurrentStep();
+}
+
+// ─── STEP NAVIGATION ─────────────────────────────────────────────────────────
+function goStep(n){
+  document.getElementById('step-' + STATE.currentStep).style.display = 'none';
+  document.querySelectorAll('.step-btn').forEach(function(b,i){ b.classList.toggle('active', i===n); });
+  STATE.currentStep = n;
+  document.getElementById('step-' + n).style.display = 'block';
+  document.getElementById('bar-info').textContent = 'Step ' + (n+1) + ' / 7';
+  renderCurrentStep();
+}
+function nextStep(){ if(STATE.currentStep < 6){ saveProject(); goStep(STATE.currentStep+1); } }
+function prevStep(){ if(STATE.currentStep > 0){ goStep(STATE.currentStep-1); } }
+
+// ─── RENDER STEPS ────────────────────────────────────────────────────────────
+function renderCurrentStep(){
+  if(!STATE.currentProject) return;
+  var code = STATE.currentProject;
+  var d = STATE.data[code];
+  if(!d) return;
+  var fn = [renderOverview,renderEngineering,renderProcurement,renderConstruction,renderManpower,renderForecast,renderSpiIssues];
+  fn[STATE.currentStep](code, d);
+}
+
+// ── STEP 0: OVERVIEW ──
+function renderOverview(code, d){
+  var ov = d.overview;
+  var m = PROJECT_META[code] || {};
+  var el = document.getElementById('step-0');
+
+  el.innerHTML = '<div class="sec-card">' +
+    '<div class="sec-head"><div class="sec-icon">📊</div><div class="sec-title">Project Overview — ' + code + '</div><div class="sec-badge">OVERVIEW</div></div>' +
+    '<div class="sec-body">' +
+
+    // ── STATUS / SPI / EOT ──
+    '<div class="fg fg-3" style="margin-bottom:14px">' +
+      '<div class="fld"><label>Status</label>' +
+        '<div class="stat-row">' +
+          ['On Track','At Risk','Delayed'].map(function(s){
+            return '<span class="stat-chip ' + (ov.status===s ? 'sel-'+s.replace(' ','') : '') + '" onclick="setStatus(\'' + s + '\')">' + s + '</span>';
+          }).join('') +
+        '</div>' +
+      '</div>' +
+      '<div class="fld"><label>SPI (Current Month)</label>' +
+        '<input type="number" id="ov-spi" step="0.01" min="0" max="2" value="' + ov.spi + '" oninput="updateOvVis()" />' +
+        '<div class="hint">e.g. 0.94 = behind, 1.07 = ahead</div>' +
+      '</div>' +
+      '<div class="fld"><label>EOT Approved (months)</label>' +
+        '<input type="number" id="ov-eot" min="0" value="' + (ov.eot||m.eot||0) + '" />' +
+        '<div class="hint">Extension of Time</div>' +
+      '</div>' +
+    '</div>' +
+
+    // ── PROJECT INFORMATION (matches master app) ──
+    '<div style="font-size:11px;font-weight:700;color:#6B7280;text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px;border-left:3px solid #1A4B8C;padding-left:8px">PROJECT INFORMATION</div>' +
+    '<div class="fg fg-3" style="margin-bottom:14px">' +
+      '<div class="fld"><label>Contract Start Date</label>' +
+        '<input type="text" id="ov-start-date" placeholder="e.g. Apr 2024" value="' + (ov.start_date||'') + '" />' +
+        '<div class="hint">Month + Year of contract start</div>' +
+      '</div>' +
+      '<div class="fld"><label>Original Contract Finish</label>' +
+        '<input type="text" id="ov-orig-finish" placeholder="e.g. Mar 2026" value="' + (ov.orig_finish||'') + '" />' +
+        '<div class="hint">Original planned finish date</div>' +
+      '</div>' +
+      '<div class="fld"><label>EOT Status</label>' +
+        '<input type="text" id="ov-eot-status" placeholder="e.g. +42 months approved" value="' + (ov.eot_status||'') + '" />' +
+        '<div class="hint">Current EOT approval status</div>' +
+      '</div>' +
+    '</div>' +
+    '<div class="fg fg-4" style="margin-bottom:14px">' +
+      '<div class="fld"><label>Contract Duration (months)</label>' +
+        '<input type="number" id="ov-contract-m" min="0" value="' + (ov.contract_months||m.contract||0) + '" />' +
+      '</div>' +
+      '<div class="fld"><label>Elapsed Duration (months)</label>' +
+        '<input type="number" id="ov-elapsed-m" min="0" value="' + (ov.elapsed_months||m.elapsed||0) + '" />' +
+      '</div>' +
+      '<div class="fld"><label>Remaining Duration (months)</label>' +
+        '<input type="number" id="ov-remaining-m" min="0" value="' + (ov.remaining_months||0) + '" />' +
+      '</div>' +
+      '<div class="fld"><label>Forecast Finish Date</label>' +
+        '<input type="text" id="ov-fc-finish" placeholder="e.g. Jul-27" value="' + (ov.fc_finish||'TBD') + '" />' +
+        '<div class="hint">Expected completion date</div>' +
+      '</div>' +
+    '</div>' +
+
+    '<div id="ov-vis" style="display:none"></div>' +
+
+    '<div class="fld"><label>Remarks / Key Updates</label>' +
+      '<textarea id="ov-remarks" rows="3" placeholder="EOT status, key milestones, blockers...">' + (ov.remarks||'') + '</textarea>' +
+    '</div>' +
+
+    '</div></div>';
+  updateOvVis();
+}
+
+function updateOvVis(){
+  var ep=+v('ov-eng-p'),ea=+v('ov-eng-a'),pp=+v('ov-pro-p'),pa=+v('ov-pro-a'),cp=+v('ov-con-p'),ca=+v('ov-con-a');
+  var el = document.getElementById('ov-vis');
+  if(!el) return;
+  function bar(label,plan,actual){
+    return '<div style="margin-bottom:8px"><div style="display:flex;justify-content:space-between;margin-bottom:4px"><span style="font-size:11.5px;font-weight:600;color:var(--muted)">' + label + '</span><span style="font-size:11px;font-family:\'IBM Plex Mono\',monospace;color:var(--navy)">P:' + plan + '% / A:' + actual + '%</span></div>' +
+      '<div class="prog-visual"><div class="prog-plan" style="width:' + Math.min(plan,100) + '%"></div></div>' +
+      '<div class="prog-visual" style="margin-top:2px"><div class="prog-actual" style="width:' + Math.min(actual,100) + '%"></div></div></div>';
+  }
+  el.innerHTML = '<div style="background:var(--bg);border-radius:8px;padding:12px 14px">' +
+    '<div style="font-size:11px;font-weight:600;color:var(--muted);margin-bottom:8px;text-transform:uppercase">Progress Visual — Blue=Plan / Teal=Actual</div>' +
+    bar('Engineering',ep,ea) + bar('Procurement',pp,pa) + bar('Construction',cp,ca) +
+    '</div>';
+}
+
+function setStatus(s){
+  var code = STATE.currentProject; if(!code) return;
+  STATE.data[code].overview.status = s;
+  document.querySelectorAll('.stat-chip').forEach(function(el){
+    el.className = 'stat-chip';
+    if(el.textContent.trim() === s) el.className = 'stat-chip sel-' + s.replace(' ','');
+  });
+}
+
+// ── ENGINEERING TEMPLATES BY PROJECT TYPE ──────────────────────────────────
+var ENG_TEMPLATES = {
+  'OHTL': [
+    'Plan and Profile',
+    'Access Road',
+    'Borehole Location',
+    'Soil Report',
+    'Foundation Design'
+  ],
+  'UGC': [
+    'Test Pit Location Plan For Radar Scanning',
+    'Radar Scanning Detailed Result',
+    'Thermal Resistivity Report',
+    'Proposed Schematic Diagram',
+    'Detailed Route Plan Drawing with Joint Bay Location',
+    'Proposed FOC Route Plan'
+  ],
+  'SS': [
+    'General',
+    'Architectural Drawings',
+    'Precast Drawings',
+    'Substructure Drawings',
+    'Outdoor Equipment Foundation',
+    'Electrical Drawings',
+    'Mechanical Drawings',
+    'Telecommunication Drawings',
+    'General Drawings'
+  ]
+};
+
+function getEngItems(code, d){
+  var type = (PROJECT_META[code] || {}).type || 'SS';
+  if(!d.eng.items || d.eng.items.length === 0){
+    var tpl = ENG_TEMPLATES[type] || ENG_TEMPLATES['SS'];
+    d.eng.items = tpl.map(function(name){ return {name:name, status:'Not Started', pct:0}; });
+  }
+  return d.eng.items;
+}
+
+// ── STEP 1: ENGINEERING ──
+function renderEngineering(code, d){
+  var eng = d.eng;
+  var el = document.getElementById('step-1');
+  var type = (PROJECT_META[code] || {}).type || 'SS';
+  var items = getEngItems(code, d);
+
+  var statusOpts = ['Not Started','In Progress','Complete','Delayed'];
+
+  var itemRows = items.map(function(item, i){
+    var sopts = statusOpts.map(function(s){
+      return '<option' + (item.status===s?' selected':'') + '>' + s + '</option>';
+    }).join('');
+    var stClr = item.status==='Complete'?'#0F6E56':item.status==='In Progress'?'#1A4B8C':item.status==='Delayed'?'#A32D2D':'#888';
+    return '<div style="display:grid;grid-template-columns:32px 1fr 80px 130px 32px;gap:8px;align-items:center;padding:8px 0;border-bottom:1px solid #F0F2F6">' +
+      '<div style="font-size:11px;font-weight:700;color:var(--muted);text-align:center">' + (i+1) + '</div>' +
+      '<input type="text" value="' + item.name + '" style="padding:6px 9px;border:1.5px solid var(--border);border-radius:6px;font-size:12.5px;font-family:inherit" onchange="engItemChange(' + i + ',\'name\',this.value)" />' +
+      '<input type="number" min="0" max="100" value="' + (item.pct||0) + '" placeholder="%" style="padding:6px 9px;border:1.5px solid var(--border);border-radius:6px;font-size:12.5px;text-align:center" onchange="engItemChange(' + i + ',\'pct\',+this.value)" />' +
+      '<select style="padding:6px 9px;border:1.5px solid var(--border);border-radius:6px;font-size:12px;color:' + stClr + ';font-weight:600" onchange="engItemChange(' + i + ',\'status\',this.value)">' + sopts + '</select>' +
+      '<button onclick="engItemDel(' + i + ')" style="padding:4px 8px;background:#fff;border:1px solid #f5c6c6;border-radius:5px;color:#A32D2D;font-size:12px;cursor:pointer">✕</button>' +
+    '</div>';
+  }).join('');
+
+  var typeBadgeClr = type==='OHTL'?'#FFF3D6;color:#BA7517':type==='UGC'?'#D6E4F7;color:#1A4B8C':'#D4F0E8;color:#0F6E56';
+
+  el.innerHTML = '<div class="sec-card">' +
+    '<div class="sec-head"><div class="sec-icon">📐</div><div class="sec-title">Engineering Status — ' + code + '</div>' +
+    '<div class="sec-badge" style="background:' + typeBadgeClr + '">' + type + ' Template</div></div>' +
+    '<div class="sec-body">' +
+
+    '<div class="fg fg-2" style="margin-bottom:16px">' +
+      '<div class="fld"><label>Overall Eng Plan %</label><input type="number" id="eng-p" min="0" max="100" value="' + eng.plan + '" /></div>' +
+      '<div class="fld"><label>Overall Eng Actual %</label><input type="number" id="eng-a" min="0" max="100" value="' + eng.actual + '" /></div>' +
+    '</div>' +
+
+    '<div class="fg fg-2" style="margin-bottom:16px">' +
+      '<div class="fld"><label>Key Milestone</label><input type="text" id="eng-ms" value="' + (eng.milestone||'') + '" placeholder="e.g. IFC Drawings Approved" /></div>' +
+      '<div class="fld"><label>Milestone Status</label>' +
+        '<select id="eng-ms-s"><option ' + (eng.mStatus==='Complete'?'selected':'') + '>Complete</option>' +
+        '<option ' + (eng.mStatus==='In Progress'?'selected':'') + '>In Progress</option>' +
+        '<option ' + (eng.mStatus==='Not Started'?'selected':'') + '>Not Started</option>' +
+        '<option ' + (eng.mStatus==='Delayed'?'selected':'') + '>Delayed</option></select>' +
+      '</div>' +
+    '</div>' +
+
+    '<div style="display:grid;grid-template-columns:32px 1fr 80px 130px 32px;gap:8px;padding:6px 0;margin-bottom:4px;border-bottom:2px solid var(--border)">' +
+      '<div style="font-size:10px;font-weight:700;color:var(--muted);text-align:center">#</div>' +
+      '<div style="font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase">Drawing / Document</div>' +
+      '<div style="font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;text-align:center">% Done</div>' +
+      '<div style="font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase">Status</div>' +
+      '<div></div>' +
+    '</div>' +
+
+    '<div id="eng-items-list">' + itemRows + '</div>' +
+
+    '<button class="add-item-btn" style="margin-top:10px;width:100%" onclick="engItemAdd()">+ Add Drawing / Document</button>' +
+
+    '</div></div>';
+}
+
+function engItemChange(i, field, val){
+  var code = STATE.currentProject; if(!code) return;
+  if(!STATE.data[code].eng.items) return;
+  STATE.data[code].eng.items[i][field] = val;
+  // re-render status color live
+  if(field==='status') renderEngineering(code, STATE.data[code]);
+}
+function engItemAdd(){
+  var code = STATE.currentProject; if(!code) return;
+  if(!STATE.data[code].eng.items) STATE.data[code].eng.items = [];
+  STATE.data[code].eng.items.push({name:'', status:'Not Started', pct:0});
+  renderEngineering(code, STATE.data[code]);
+}
+function engItemDel(i){
+  var code = STATE.currentProject; if(!code) return;
+  STATE.data[code].eng.items.splice(i, 1);
+  renderEngineering(code, STATE.data[code]);
+}
+
+// ── STEP 2: PROCUREMENT ──
+function renderProcurement(code, d){
+  var pro = d.pro;
+  var el = document.getElementById('step-2');
+
+  function proSection(key, title, icon, color){
+    var items = pro[key] || [];
+    var rows = items.map(function(item,i){
+      return '<div class="pro-item">' +
+        '<input type="text" value="' + (item.name||'') + '" placeholder="Item name..." onchange="proItemChange(\'' + key + '\',' + i + ',\'name\',this.value)" />' +
+        '<input type="text" value="' + (item.date||'') + '" placeholder="Date e.g. Jun-26" onchange="proItemChange(\'' + key + '\',' + i + ',\'date\',this.value)" />' +
+        '<select onchange="proItemChange(\'' + key + '\',' + i + ',\'status\',this.value)">' +
+          ['Done','In Progress','Delayed','Pending'].map(function(s){ return '<option ' + (item.status===s?'selected':'') + '>' + s + '</option>'; }).join('') +
+        '</select>' +
+        '<button class="del-item-btn" onclick="proItemDel(\'' + key + '\',' + i + ')">✕</button>' +
+      '</div>';
+    }).join('');
+
+    return '<div class="pro-section">' +
+      '<div class="pro-section-title"><span style="color:'+color+'">' + icon + '</span> ' + title + '</div>' +
+      '<div class="pro-items" id="pro-items-' + key + '">' + rows + '</div>' +
+      '<button class="add-item-btn" onclick="proItemAdd(\'' + key + '\')">+ Add Item</button>' +
+    '</div>';
+  }
+
+  el.innerHTML = '<div class="sec-card">' +
+    '<div class="sec-head"><div class="sec-icon">📦</div><div class="sec-title">Procurement Status — ' + code + '</div><div class="sec-badge">PROCUREMENT</div></div>' +
+    '<div class="sec-body">' +
+
+    '<div class="fg fg-3" style="margin-bottom:16px">' +
+      '<div class="fld"><label>Overall Pro Plan %</label><input type="number" id="pro-p" min="0" max="100" value="' + pro.plan + '" /></div>' +
+      '<div class="fld"><label>Overall Pro Actual %</label><input type="number" id="pro-a" min="0" max="100" value="' + pro.actual + '" /></div>' +
+      '<div class="fld"><label>Risk Level</label>' +
+        '<select id="pro-risk"><option ' + (pro.risk==='Low'?'selected':'') + '>Low</option><option ' + (pro.risk==='Medium'?'selected':'') + '>Medium</option><option ' + (pro.risk==='High'?'selected':'') + '>High</option></select>' +
+      '</div>' +
+    '</div>' +
+
+    proSection('pos','Purchase Orders','📋','#1A4B8C') +
+    proSection('mfr','Manufacturing / Inspection','🏭','#BA7517') +
+    proSection('fat','FAT (Factory Acceptance Test)','✅','#0F6E56') +
+    proSection('delivery','Delivery to Site','🚚','#534AB7') +
+
+    '</div></div>';
+}
+
+function proItemAdd(key){
+  var code = STATE.currentProject; if(!code) return;
+  if(!STATE.data[code].pro[key]) STATE.data[code].pro[key] = [];
+  STATE.data[code].pro[key].push({name:'',date:'',status:'Pending'});
+  renderProcurement(code, STATE.data[code]);
+}
+function proItemDel(key,i){
+  var code = STATE.currentProject; if(!code) return;
+  STATE.data[code].pro[key].splice(i,1);
+  renderProcurement(code, STATE.data[code]);
+}
+function proItemChange(key,i,field,val){
+  var code = STATE.currentProject; if(!code) return;
+  STATE.data[code].pro[key][i][field] = val;
+}
+
+// ── STEP 3: CONSTRUCTION ──
+// ── CONSTRUCTION SCOPE DEFAULTS PER TYPE ─────────────────────────────────
+var CON_SCOPE_DEFAULTS = {
+  'SS': [
+    {name:'Civil Works',    p:0, a:0, status:'Not Started'},
+    {name:'Mechanical',     p:0, a:0, status:'Not Started'},
+    {name:'Electrical',     p:0, a:0, status:'Not Started'},
+    {name:'T&C / Testing',  p:0, a:0, status:'Not Started'}
+  ],
+  'OHTL': [
+    {name:'PI-01 to PI-02', p:0, a:0, status:'Not Started'},
+    {name:'PI-02 to PI-03', p:0, a:0, status:'Not Started'},
+    {name:'PI-03 to PI-04', p:0, a:0, status:'Not Started'},
+    {name:'PI-04 to PI-05', p:0, a:0, status:'Not Started'},
+    {name:'PI-05 to PI-06', p:0, a:0, status:'Not Started'}
+  ],
+  'UGC': [
+    {name:'Section 1 (0–600m)',    p:0, a:0, status:'Not Started'},
+    {name:'Section 2 (600–1200m)', p:0, a:0, status:'Not Started'},
+    {name:'Section 3 (1200–1800m)',p:0, a:0, status:'Not Started'},
+    {name:'Section 4 (1800–2400m)',p:0, a:0, status:'Not Started'},
+    {name:'Section 5 (2400–3000m)',p:0, a:0, status:'Not Started'}
+  ]
+};
+
+function conScopeColors(idx){
+  var colors=['#0F6E56','#1A4B8C','#BA7517','#A32D2D','#534AB7','#0B7285','#6B5B00','#4A1942','#1A6B2A','#7A3B00'];
+  return colors[idx % colors.length];
+}
+
+function initConScopes(code, d){
+  // If no scopes yet, load defaults for project type
+  if(!d.con.scopes || d.con.scopes.length === 0){
+    var m = PROJECT_META[code] || {};
+    var type = m.type || 'SS';
+    d.con.scopes = JSON.parse(JSON.stringify(CON_SCOPE_DEFAULTS[type] || CON_SCOPE_DEFAULTS['SS']));
+  }
+}
+
+function renderConstruction(code, d){
+  var con = d.con;
+  var m = PROJECT_META[code] || {};
+  var type = m.type || 'SS';
+  initConScopes(code, d);
+  var el = document.getElementById('step-3');
+
+  function scopeTypeLabel(){
+    if(type==='OHTL') return 'Portions (PI to PI)';
+    if(type==='UGC')  return 'Sections (by distance)';
+    return 'Disciplines';
+  }
+  function addBtnLabel(){
+    if(type==='OHTL') return '+ Add Portion';
+    if(type==='UGC')  return '+ Add Section';
+    return '+ Add Discipline';
+  }
+  function placeholderName(){
+    if(type==='OHTL') return 'e.g. PI-06 to PI-07';
+    if(type==='UGC')  return 'e.g. Section 6 (3000–3600m)';
+    return 'e.g. Civil Works';
+  }
+
+  var scopeRows = con.scopes.map(function(sc, idx){
+    var color = conScopeColors(idx);
+    var statusOpts = ['Not Started','In Progress','Complete','Delayed'].map(function(s){
+      return '<option value="'+s+'" '+(sc.status===s?'selected':'')+'>'+s+'</option>';
+    }).join('');
+    return '<div id="con-scope-row-'+idx+'" style="display:grid;grid-template-columns:2fr 80px 80px 140px 32px;gap:8px;align-items:center;padding:10px 12px;background:#fff;border:1px solid var(--border);border-radius:8px;margin-bottom:6px">' +
+      // Name (editable)
+      '<div style="display:flex;align-items:center;gap:8px">' +
+        '<span style="color:'+color+';font-size:16px">●</span>' +
+        '<input type="text" id="con-sc-name-'+idx+'" value="'+sc.name+'" placeholder="'+placeholderName()+'" '+
+          'style="flex:1;padding:6px 8px;border:1.5px solid var(--border);border-radius:6px;font-size:12.5px;font-family:inherit;font-weight:600" />' +
+      '</div>' +
+      // Plan %
+      '<div style="display:flex;flex-direction:column;gap:3px">' +
+        '<label style="font-size:10px;font-weight:600;color:var(--muted)">PLAN %</label>' +
+        '<input type="number" id="con-sc-p-'+idx+'" min="0" max="100" value="'+sc.p+'" '+
+          'style="padding:5px 6px;border:1.5px solid var(--border);border-radius:6px;font-size:12.5px;text-align:center" />' +
+      '</div>' +
+      // Actual %
+      '<div style="display:flex;flex-direction:column;gap:3px">' +
+        '<label style="font-size:10px;font-weight:600;color:var(--muted)">ACTUAL %</label>' +
+        '<input type="number" id="con-sc-a-'+idx+'" min="0" max="100" value="'+sc.a+'" '+
+          'style="padding:5px 6px;border:1.5px solid var(--border);border-radius:6px;font-size:12.5px;text-align:center;color:'+(sc.a>=sc.p?'#0F6E56':'#A32D2D')+'" />' +
+      '</div>' +
+      // Status
+      '<div style="display:flex;flex-direction:column;gap:3px">' +
+        '<label style="font-size:10px;font-weight:600;color:var(--muted)">STATUS</label>' +
+        '<select id="con-sc-s-'+idx+'" style="padding:5px 6px;border:1.5px solid var(--border);border-radius:6px;font-size:12px;font-family:inherit">'+statusOpts+'</select>' +
+      '</div>' +
+      // Delete
+      '<button onclick="conDeleteScope('+idx+')" style="width:28px;height:28px;border:1px solid #fca5a5;background:#fff;color:#A32D2D;border-radius:5px;cursor:pointer;font-size:14px;display:flex;align-items:center;justify-content:center;margin-top:14px">✕</button>' +
+    '</div>';
+  }).join('');
+
+  el.innerHTML = '<div class="sec-card">' +
+    '<div class="sec-head"><div class="sec-icon">🏗️</div>' +
+      '<div class="sec-title">Construction Status — ' + code + ' <span style="font-size:11px;background:#D6E4F7;color:#1A4B8C;padding:2px 8px;border-radius:10px;font-weight:600">'+type+'</span></div>' +
+      '<div class="sec-badge">CONSTRUCTION</div>' +
+    '</div>' +
+    '<div class="sec-body">' +
+
+    // Overall %
+    '<div class="fg fg-2" style="margin-bottom:16px">' +
+      '<div class="fld"><label>Overall Construction Plan %</label>' +
+        '<input type="number" id="con-p" min="0" max="100" value="' + con.plan + '" /></div>' +
+      '<div class="fld"><label>Overall Construction Actual %</label>' +
+        '<input type="number" id="con-a" min="0" max="100" value="' + con.actual + '" /></div>' +
+    '</div>' +
+    '<input type="hidden" id="con-civil-act" value="'+(con.civil_a||0)+'" />' +
+    '<input type="hidden" id="con-elec-act" value="'+(con.elec_a||0)+'" />' +
+
+    // Dynamic scope section
+    '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">' +
+      '<div style="font-size:11px;font-weight:700;color:#6B7280;text-transform:uppercase;letter-spacing:.05em;border-left:3px solid #1A4B8C;padding-left:8px">' +
+        scopeTypeLabel() + ' — Scope Breakdown' +
+      '</div>' +
+      '<button onclick="conAddScope()" style="padding:5px 14px;background:#EBF3FF;border:1px solid #B5D4F4;border-radius:6px;color:#1A4B8C;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit">' +
+        addBtnLabel() +
+      '</button>' +
+    '</div>' +
+
+    // Header row
+    '<div style="display:grid;grid-template-columns:2fr 80px 80px 140px 32px;gap:8px;padding:0 12px 6px;font-size:10px;font-weight:700;color:#6B7280;text-transform:uppercase">' +
+      '<span>'+(type==='OHTL'?'PORTION NAME':type==='UGC'?'SECTION NAME':'DISCIPLINE')+'</span>' +
+      '<span style="text-align:center">PLAN %</span>' +
+      '<span style="text-align:center">ACTUAL %</span>' +
+      '<span>STATUS</span><span></span>' +
+    '</div>' +
+
+    '<div id="con-scope-list">' + scopeRows + '</div>' +
+
+    // Summary bar
+    '<div id="con-scope-summary" style="background:#F4F6FA;border-radius:8px;padding:10px 14px;margin-top:10px;font-size:12px;color:#6B7280"></div>' +
+
+    // Narrative fields
+    '<div class="fg fg-3" style="margin-top:16px">' +
+      '<div class="fld"><label>✅ Achieved Activities</label>' +
+        '<textarea id="con-achieved" rows="3" placeholder="List completed activities...">' + (con.achieved||'') + '</textarea></div>' +
+      '<div class="fld"><label>⚠️ Delayed Activities</label>' +
+        '<textarea id="con-delayed" rows="3" placeholder="List delayed activities...">' + (con.delayed||'') + '</textarea></div>' +
+      '<div class="fld"><label>🔧 Issues & Actions</label>' +
+        '<textarea id="con-issues-txt" rows="3" placeholder="Key issues and actions...">' + (con.issues_txt||'') + '</textarea></div>' +
+    '</div>' +
+    '</div></div>';
+
+  conUpdateSummary();
+}
+
+function conAddScope(){
+  var code = STATE.currentProject; if(!code) return;
+  var d = STATE.data[code];
+  var m = PROJECT_META[code] || {};
+  var type = m.type || 'SS';
+  var idx = d.con.scopes.length;
+  var defaultName = type==='OHTL' ? 'PI-0'+(idx+1)+' to PI-0'+(idx+2) :
+                    type==='UGC'  ? 'Section '+(idx+1) : 'New Discipline';
+  d.con.scopes.push({name:defaultName, p:0, a:0, status:'Not Started'});
+  renderConstruction(code, d);
+}
+
+function conDeleteScope(idx){
+  var code = STATE.currentProject; if(!code) return;
+  var d = STATE.data[code];
+  if(d.con.scopes.length <= 1){ toast('⚠ Must keep at least one scope item'); return; }
+  if(!confirm('Remove this scope item?')) return;
+  d.con.scopes.splice(idx, 1);
+  renderConstruction(code, d);
+}
+
+function conUpdateSummary(){
+  var code = STATE.currentProject; if(!code) return;
+  var d = STATE.data[code];
+  if(!d||!d.con.scopes) return;
+  var total = d.con.scopes.length;
+  var complete = d.con.scopes.filter(function(s){return s.status==='Complete';}).length;
+  var inProgress = d.con.scopes.filter(function(s){return s.status==='In Progress';}).length;
+  var delayed = d.con.scopes.filter(function(s){return s.status==='Delayed';}).length;
+  var avgPlan = total ? Math.round(d.con.scopes.reduce(function(s,x){return s+x.p;},0)/total) : 0;
+  var avgActual = total ? Math.round(d.con.scopes.reduce(function(s,x){return s+x.a;},0)/total) : 0;
+  var el = document.getElementById('con-scope-summary');
+  if(!el) return;
+  el.innerHTML = '<div style="display:flex;gap:16px;flex-wrap:wrap;align-items:center">' +
+    '<span>📊 <strong>'+total+'</strong> items</span>' +
+    '<span style="color:#0F6E56">✅ Complete: <strong>'+complete+'</strong></span>' +
+    '<span style="color:#BA7517">🔄 In Progress: <strong>'+inProgress+'</strong></span>' +
+    '<span style="color:#A32D2D">⚠ Delayed: <strong>'+delayed+'</strong></span>' +
+    '<span style="margin-left:auto">Avg Plan: <strong>'+avgPlan+'%</strong> / Avg Actual: <strong>'+avgActual+'%</strong></span>' +
+  '</div>';
+}
+
+function saveConScopes(code, d){
+  // Read all scope rows from DOM into state
+  if(!d.con.scopes) return;
+  d.con.scopes.forEach(function(sc, idx){
+    var nameEl = document.getElementById('con-sc-name-'+idx);
+    var pEl    = document.getElementById('con-sc-p-'+idx);
+    var aEl    = document.getElementById('con-sc-a-'+idx);
+    var sEl    = document.getElementById('con-sc-s-'+idx);
+    if(nameEl) sc.name   = nameEl.value;
+    if(pEl)    sc.p      = +pEl.value;
+    if(aEl)    sc.a      = +aEl.value;
+    if(sEl)    sc.status = sEl.value;
+  });
+}
+
+// ── STEP 4: MANPOWER ──
+function renderManpower(code, d){
+  var mp = d.mp;
+  var el = document.getElementById('step-4');
+  el.innerHTML = '<div class="sec-card">' +
+    '<div class="sec-head"><div class="sec-icon">👷</div><div class="sec-title">Manpower & Equipment — ' + code + '</div><div class="sec-badge">MANPOWER</div></div>' +
+    '<div class="sec-body">' +
+
+    '<div class="fg fg-2" style="margin-bottom:14px">' +
+      '<div class="fld"><label>Manpower Plan (headcount)</label><input type="number" id="mp-p" min="0" value="' + mp.mpP + '" /></div>' +
+      '<div class="fld"><label>Manpower Actual (headcount)</label><input type="number" id="mp-a" min="0" value="' + mp.mpA + '" /></div>' +
+    '</div>' +
+    '<div class="fg fg-2" style="margin-bottom:14px">' +
+      '<div class="fld"><label>Equipment Plan (units)</label><input type="number" id="eq-p" min="0" value="' + mp.eqP + '" /></div>' +
+      '<div class="fld"><label>Equipment Actual (units)</label><input type="number" id="eq-a" min="0" value="' + mp.eqA + '" /></div>' +
+    '</div>' +
+    '<div class="fg fg-2">' +
+      '<div class="fld"><label>Constraints / Shortage Notes</label><textarea id="mp-constraint" rows="2" placeholder="e.g. Labour shortage, equipment delay...">' + (mp.constraint||'') + '</textarea></div>' +
+      '<div class="fld"><label>Main Subcontractor</label><input type="text" id="mp-sub" value="' + (mp.sub||'') + '" placeholder="Subcontractor name" /></div>' +
+    '</div>' +
+
+    '</div></div>';
+}
+
+// ── STEP 5: FORECAST ──
+function renderForecast(code, d){
+  var fc = d.forecast;
+  var el = document.getElementById('step-5');
+  el.innerHTML = '<div class="sec-card">' +
+    '<div class="sec-head"><div class="sec-icon">📅</div><div class="sec-title">Forecast — ' + code + '</div><div class="sec-badge">FORECAST</div></div>' +
+    '<div class="sec-body">' +
+
+    '<div class="fg fg-2" style="margin-bottom:14px">' +
+      '<div class="fld"><label>Baseline Finish Date</label><input type="text" id="fc-base" value="' + fc.baseline + '" placeholder="e.g. Jul-27" /></div>' +
+      '<div class="fld"><label>Forecast Overall Finish</label><input type="text" id="fc-overall" value="' + fc.overall + '" placeholder="e.g. Sep-27" /></div>' +
+    '</div>' +
+    '<div class="fg fg-2" style="margin-bottom:14px">' +
+      '<div class="fld"><label>Forecast Civil Finish</label><input type="text" id="fc-civil" value="' + fc.civil + '" placeholder="e.g. Aug-27" /></div>' +
+      '<div class="fld"><label>Forecast Electrical Finish</label><input type="text" id="fc-elec" value="' + fc.elec + '" placeholder="e.g. Sep-27" /></div>' +
+    '</div>' +
+    '<div class="fg fg-2">' +
+      '<div class="fld"><label>Variance (days, +ahead/-behind)</label><input type="number" id="fc-var" value="' + fc.varDays + '" placeholder="e.g. -30" /></div>' +
+      '<div class="fld"><label>Confidence Level</label>' +
+        '<select id="fc-conf"><option ' + (fc.conf==='High'?'selected':'') + '>High</option><option ' + (fc.conf==='Medium'?'selected':'') + '>Medium</option><option ' + (fc.conf==='Low'?'selected':'') + '>Low</option></select>' +
+      '</div>' +
+    '</div>' +
+
+    '</div></div>';
+}
+
+// ── STEP 6: SPI & ISSUES ──
+function renderSpiIssues(code, d){
+  var spi = d.spi;
+  var issues = d.issues || [];
+  var el = document.getElementById('step-6');
+
+  var months = ['jan','feb','mar','apr','may','jun','jul','aug','sep','oct','nov','dec'];
+  var mnow = STATE.month.toLowerCase();
+  var allMonths = ['jan','feb','mar','apr','may','jun','jul','aug','sep','oct','nov','dec'];
+  var spiInputs = allMonths.map(function(m){
+    return '<div class="spi-month">' +
+      '<label>' + m.toUpperCase() + '</label>' +
+      '<input type="number" id="spi-' + m + '" step="0.01" min="0" max="2" value="' + (spi[m]||'') + '" placeholder="—" style="padding:6px 8px;border:1.5px solid var(--border);border-radius:6px;font-size:13px;font-family:\'IBM Plex Mono\',monospace;width:100%" />' +
+    '</div>';
+  }).join('');
+
+  var issueRows = issues.map(function(iss,i){
+    return '<div class="issue-row" id="issue-row-' + i + '">' +
+      '<textarea placeholder="Describe the issue..." onchange="issueChange(' + i + ',\'issue\',this.value)">' + (iss.issue||'') + '</textarea>' +
+      '<select onchange="issueChange(' + i + ',\'sev\',this.value)">' +
+        ['Critical','High','Medium','Low'].map(function(s){ return '<option ' + (iss.sev===s?'selected':'') + '>' + s + '</option>'; }).join('') +
+      '</select>' +
+      '<select onchange="issueChange(' + i + ',\'status\',this.value)">' +
+        ['Open','In Progress','Closed'].map(function(s){ return '<option ' + (iss.status===s?'selected':'') + '>' + s + '</option>'; }).join('') +
+      '</select>' +
+      '<button class="del-item-btn" onclick="issueDel(' + i + ')">✕</button>' +
+    '</div>';
+  }).join('');
+
+  el.innerHTML = '<div class="sec-card" style="margin-bottom:14px">' +
+    '<div class="sec-head"><div class="sec-icon">📈</div><div class="sec-title">SPI Monthly Trend — ' + code + '</div><div class="sec-badge">SPI</div></div>' +
+    '<div class="sec-body">' +
+    '<div style="display:grid;grid-template-columns:repeat(6,1fr);gap:10px">' + spiInputs + '</div>' +
+    '<div class="fg fg-2" style="margin-top:14px">' +
+      '<div class="fld"><label>SPI Status</label>' +
+        '<select id="spi-status"><option ' + (spi.status==='Good'?'selected':'') + '>Good</option><option ' + (spi.status==='Watch'?'selected':'') + '>Watch</option><option ' + (spi.status==='Critical'?'selected':'') + '>Critical</option></select>' +
+      '</div>' +
+    '</div>' +
+    '</div></div>' +
+
+    '<div class="sec-card">' +
+    '<div class="sec-head"><div class="sec-icon">⚠️</div><div class="sec-title">Issues & Risks — ' + code + '</div><div class="sec-badge">ISSUES</div></div>' +
+    '<div class="sec-body">' +
+    '<div style="display:grid;grid-template-columns:1fr 90px 90px 100px 70px 32px;gap:8px;margin-bottom:6px">' +
+      '<div style="font-size:10.5px;font-weight:600;color:var(--muted)">ISSUE / RISK DESCRIPTION</div>' +
+      '<div style="font-size:10.5px;font-weight:600;color:var(--muted)">SEVERITY</div>' +
+      '<div style="font-size:10.5px;font-weight:600;color:var(--muted)">STATUS</div>' +
+      '<div style="font-size:10.5px;font-weight:600;color:var(--muted)">TARGET DATE</div>' +
+      '<div style="font-size:10.5px;font-weight:600;color:var(--muted)">DAYS</div>' +
+      '<div></div>' +
+    '</div>' +
+    '<div id="issues-list">' + (issueRows || '<div style="color:var(--muted);font-size:12px;padding:8px 0">No issues logged. Click + to add.</div>') + '</div>' +
+    '<button class="add-item-btn" style="margin-top:10px" onclick="issueAdd()">+ Add Issue / Risk</button>' +
+    '</div></div>';
+}
+
+function issueAdd(){
+  var code = STATE.currentProject; if(!code) return;
+  STATE.data[code].issues.push({issue:'',sev:'High',status:'Open'});
+  renderSpiIssues(code, STATE.data[code]);
+}
+function issueDel(i){
+  var code = STATE.currentProject; if(!code) return;
+  STATE.data[code].issues.splice(i,1);
+  renderSpiIssues(code, STATE.data[code]);
+}
+function issueChange(i,field,val){
+  var code = STATE.currentProject; if(!code) return;
+  STATE.data[code].issues[i][field] = val;
+}
+
+// ─── SAVE PROJECT DATA FROM DOM ──────────────────────────────────────────────
+function saveProject(){
+  var code = STATE.currentProject; if(!code) return;
+  var d = STATE.data[code];
+
+  // Overview
+  if(v('ov-spi')!==null){
+    d.overview.spi            = +v('ov-spi');
+    d.overview.eot            = +v('ov-eot');
+    d.overview.eng_plan       = +v('ov-eng-p');
+    d.overview.eng_actual     = +v('ov-eng-a');
+    d.overview.pro_plan       = +v('ov-pro-p');
+    d.overview.pro_actual     = +v('ov-pro-a');
+    d.overview.con_plan       = +v('ov-con-p');
+    d.overview.con_actual     = +v('ov-con-a');
+    d.overview.remarks        = v('ov-remarks');
+    d.overview.start_date     = v('ov-start-date')  || '';
+    d.overview.orig_finish    = v('ov-orig-finish')  || '';
+    d.overview.eot_status     = v('ov-eot-status')   || '';
+    d.overview.contract_months= +v('ov-contract-m')  || 0;
+    d.overview.elapsed_months = +v('ov-elapsed-m')   || 0;
+    d.overview.remaining_months=+v('ov-remaining-m') || 0;
+    d.overview.fc_finish      = v('ov-fc-finish')    || 'TBD';
+  }
+  // Engineering
+  if(v('eng-p')!==null){
+    d.eng.plan = +v('eng-p');
+    d.eng.actual = +v('eng-a');
+    d.eng.milestone = v('eng-ms');
+    d.eng.mStatus = v('eng-ms-s');
+    // items are saved live via engItemChange — no extra work needed here
+  }
+  // Procurement
+  if(v('pro-p')!==null){ d.pro.plan = +v('pro-p'); d.pro.actual = +v('pro-a'); d.pro.risk = v('pro-risk'); }
+  // Construction
+  if(v('con-p')!==null){
+    d.con.plan = +v('con-p'); d.con.actual = +v('con-a');
+    d.con.civil_a = +v('con-civil-act')||0; d.con.elec_a = +v('con-elec-act')||0;
+    d.con.achieved   = v('con-achieved')   || '';
+    d.con.delayed    = v('con-delayed')    || '';
+    d.con.issues_txt = v('con-issues-txt') || '';
+    saveConScopes(code, d); // save dynamic scopes
+  }
+  // Manpower
+  if(v('mp-p')!==null){ d.mp.mpP=+v('mp-p'); d.mp.mpA=+v('mp-a'); d.mp.eqP=+v('eq-p'); d.mp.eqA=+v('eq-a'); d.mp.constraint=v('mp-constraint'); d.mp.sub=v('mp-sub'); }
+  // Forecast
+  if(v('fc-base')!==null){ d.forecast.baseline=v('fc-base'); d.forecast.overall=v('fc-overall'); d.forecast.civil=v('fc-civil'); d.forecast.elec=v('fc-elec'); d.forecast.varDays=+v('fc-var'); d.forecast.conf=v('fc-conf'); }
+  // SPI
+  if(v('spi-jan')!==null){ ['jan','feb','mar','apr','may','jun','jul','aug','sep','oct','nov','dec'].forEach(function(m){ var val=v('spi-'+m); if(val!==null && val!=='') d.spi[m]=+val; }); d.spi.status=v('spi-status'); }
+
+  saveToLocalStorage();
+  updateProgress();
+
+  var msg = document.getElementById('save-msg');
+  msg.classList.add('show');
+  setTimeout(function(){ msg.classList.remove('show'); }, 2000);
+
+  // Mark step as done
+  document.getElementById('sn' + STATE.currentStep).classList.add('done');
+  toast('✓ ' + code + ' data saved');
+}
+
+// ─── PROGRESS ────────────────────────────────────────────────────────────────
+function updateProgress(){
+  var total = STATE.projects.length * 7;
+  var done = 0;
+  STATE.projects.forEach(function(code){
+    var d = STATE.data[code];
+    if(!d) return;
+    if(d.overview.eng_plan > 0 || d.overview.remarks) done++;
+    if(d.eng.plan > 0 || d.eng.actual > 0) done++;
+    if(d.pro.plan > 0 || (d.pro.pos && d.pro.pos.length > 0)) done++;
+    if(d.con.plan > 0 || d.con.actual > 0) done++;
+    if(d.mp.mpA > 0) done++;
+    if(d.forecast.overall !== 'TBD') done++;
+    if(d.spi.apr !== 1.0 || (d.issues && d.issues.length > 0)) done++;
+  });
+  var pct = total > 0 ? Math.round(done/total*100) : 0;
+  var fill = document.getElementById('form-prog-fill');
+  var lbl = document.getElementById('form-prog-pct');
+  if(fill) fill.style.width = pct + '%';
+  if(lbl) lbl.textContent = pct + '%';
+}
+
+// ─── SUBMIT TO GOOGLE SHEET ──────────────────────────────────────────────────
+function submitAll(){
+  saveProject();
+
+  if(!STATE.gasUrl){
+    toast('⚠️ No GAS URL set — downloading local backup instead.');
+    exportLocalJSON();
+    return;
+  }
+
+  var rows = buildSheetRows();
+  var payload = {
+    planner: STATE.planner,
+    month: STATE.month,
+    year: STATE.year,
+    rows: rows,
+    timestamp: new Date().toISOString()
+  };
+
+  var syncEl = document.getElementById('sync-status');
+  syncEl.textContent = '⏳ Sending...';
+  syncEl.className = 'busy';
+  document.getElementById('btn-submit-all').disabled = true;
+
+  // Method 1: fetch with no-cors (works from local file)
+  var url = STATE.gasUrl + '?payload=' + encodeURIComponent(JSON.stringify(payload));
+
+  fetch(url, { method: 'GET', mode: 'no-cors' })
+    .then(function(){
+      syncEl.textContent = '✓ Submitted';
+      syncEl.className = 'ok';
+      document.getElementById('btn-submit-all').disabled = false;
+      showSuccess(true);
+      toast('✓ Data submitted to Google Sheet!');
+    })
+    .catch(function(err){
+      // Fallback: try form POST via iframe
+      submitViaForm(payload, syncEl);
+    });
+}
+
+function submitViaForm(payload, syncEl){
+  var form = document.createElement('form');
+  form.method = 'POST';
+  form.action = STATE.gasUrl;
+  form.target = 'tdp-submit-frame';
+  form.style.display = 'none';
+  var input = document.createElement('input');
+  input.type = 'hidden';
+  input.name = 'payload';
+  input.value = JSON.stringify(payload);
+  form.appendChild(input);
+  var iframe = document.getElementById('tdp-submit-frame');
+  if(!iframe){
+    iframe = document.createElement('iframe');
+    iframe.name = 'tdp-submit-frame';
+    iframe.id = 'tdp-submit-frame';
+    iframe.style.display = 'none';
+    document.body.appendChild(iframe);
+  }
+  iframe.onload = function(){
+    syncEl.textContent = '✓ Submitted';
+    syncEl.className = 'ok';
+    document.getElementById('btn-submit-all').disabled = false;
+    showSuccess(true);
+  };
+  document.body.appendChild(form);
+  form.submit();
+  document.body.removeChild(form);
+  setTimeout(function(){
+    if(syncEl.className === 'busy'){
+      syncEl.textContent = '✓ Submitted';
+      syncEl.className = 'ok';
+      document.getElementById('btn-submit-all').disabled = false;
+      showSuccess(true);
+    }
+  }, 5000);
+}
+
+// ─── BUILD FLAT ROWS FOR GOOGLE SHEET ───────────────────────────────────────
+// Each row = one project. Columns match Intelligence App Excel export structure.
+function buildSheetRows(){
+  return STATE.projects.map(function(code){
+    var d = STATE.data[code];
+    var m = PROJECT_META[code] || {};
+    return {
+      // ── IDENTITY
+      code: code,
+      name: m.name || code,
+      type: m.type || '',
+      region: m.region || '',
+      planner: STATE.planner,
+      month: STATE.month,
+      year: STATE.year,
+      update_date: new Date().toLocaleDateString('en-GB'),
+      contract: m.contract || 0,
+      elapsed: m.elapsed || 0,
+
+      // ── OVERVIEW
+      status: d.overview.status,
+      spi: d.overview.spi,
+      eot: d.overview.eot || m.eot || 0,
+      eng_plan: d.overview.eng_plan,
+      eng_actual: d.overview.eng_actual,
+      pro_plan: d.overview.pro_plan,
+      pro_actual: d.overview.pro_actual,
+      con_plan: d.overview.con_plan,
+      con_actual: d.overview.con_actual,
+      remarks: d.overview.remarks,
+      // ── PROJECT INFORMATION
+      start_date:      d.overview.start_date      || '',
+      orig_finish:     d.overview.orig_finish      || '',
+      eot_status:      d.overview.eot_status       || (d.overview.eot>0 ? '+'+d.overview.eot+' months approved' : 'Not applied'),
+      contract_months: d.overview.contract_months  || m.contract || 0,
+      elapsed_months:  d.overview.elapsed_months   || m.elapsed  || 0,
+      remaining_months:d.overview.remaining_months || 0,
+      fc_finish_date:  d.overview.fc_finish        || 'TBD',
+
+      // ── ENGINEERING
+      eng_overall_plan: d.eng.plan,
+      eng_overall_actual: d.eng.actual,
+      eng_milestone: d.eng.milestone,
+      eng_milestone_status: d.eng.mStatus,
+      eng_items: JSON.stringify(d.eng.items || []),
+
+      // ── PROCUREMENT
+      pro_overall_plan: d.pro.plan,
+      pro_overall_actual: d.pro.actual,
+      pro_risk: d.pro.risk,
+      pro_pos: JSON.stringify(d.pro.pos || []),
+      pro_mfr: JSON.stringify(d.pro.mfr || []),
+      pro_fat: JSON.stringify(d.pro.fat || []),
+      pro_delivery: JSON.stringify(d.pro.delivery || []),
+
+      // ── CONSTRUCTION
+      con_overall_plan: d.con.plan,
+      con_overall_actual: d.con.actual,
+      con_civil_actual: d.con.civil_a || 0,
+      con_elec_actual: d.con.elec_a || 0,
+      con_achieved: d.con.achieved || '',
+      con_delayed: d.con.delayed || '',
+      con_issues: d.con.issues_txt || '',
+      con_scopes: JSON.stringify(d.con.scopes || []),
+      // Also flatten first 4 scopes for Excel compatibility
+      con_disc_civil_p: d.con.scopes&&d.con.scopes[0] ? d.con.scopes[0].p : (d.con.disciplines.civil ? d.con.disciplines.civil.p : 0),
+      con_disc_civil_a: d.con.scopes&&d.con.scopes[0] ? d.con.scopes[0].a : (d.con.disciplines.civil ? d.con.disciplines.civil.a : 0),
+      con_disc_civil_s: d.con.scopes&&d.con.scopes[0] ? d.con.scopes[0].status : (d.con.disciplines.civil ? d.con.disciplines.civil.status : ''),
+      con_disc_mech_p:  d.con.scopes&&d.con.scopes[1] ? d.con.scopes[1].p : (d.con.disciplines.mech ? d.con.disciplines.mech.p : 0),
+      con_disc_mech_a:  d.con.scopes&&d.con.scopes[1] ? d.con.scopes[1].a : (d.con.disciplines.mech ? d.con.disciplines.mech.a : 0),
+      con_disc_mech_s:  d.con.scopes&&d.con.scopes[1] ? d.con.scopes[1].status : (d.con.disciplines.mech ? d.con.disciplines.mech.status : ''),
+      con_disc_elec_p:  d.con.scopes&&d.con.scopes[2] ? d.con.scopes[2].p : (d.con.disciplines.elec ? d.con.disciplines.elec.p : 0),
+      con_disc_elec_a:  d.con.scopes&&d.con.scopes[2] ? d.con.scopes[2].a : (d.con.disciplines.elec ? d.con.disciplines.elec.a : 0),
+      con_disc_elec_s:  d.con.scopes&&d.con.scopes[2] ? d.con.scopes[2].status : (d.con.disciplines.elec ? d.con.disciplines.elec.status : ''),
+      con_disc_test_p:  d.con.scopes&&d.con.scopes[3] ? d.con.scopes[3].p : (d.con.disciplines.test ? d.con.disciplines.test.p : 0),
+      con_disc_test_a:  d.con.scopes&&d.con.scopes[3] ? d.con.scopes[3].a : (d.con.disciplines.test ? d.con.disciplines.test.a : 0),
+      con_disc_test_s:  d.con.scopes&&d.con.scopes[3] ? d.con.scopes[3].status : (d.con.disciplines.test ? d.con.disciplines.test.status : ''),
+
+      // ── MANPOWER
+      mp_plan: d.mp.mpP,
+      mp_actual: d.mp.mpA,
+      eq_plan: d.mp.eqP,
+      eq_actual: d.mp.eqA,
+      mp_constraint: d.mp.constraint,
+      mp_sub: d.mp.sub,
+
+      // ── FORECAST
+      fc_baseline: d.forecast.baseline,
+      fc_overall: d.forecast.overall,
+      fc_civil: d.forecast.civil,
+      fc_elec: d.forecast.elec,
+      fc_var_days: d.forecast.varDays,
+      fc_conf: d.forecast.conf,
+
+      // ── SPI
+      spi_jan: d.spi.jan||'',
+      spi_feb: d.spi.feb||'',
+      spi_mar: d.spi.mar||'',
+      spi_apr: d.spi.apr||'',
+      spi_may: d.spi.may||'',
+      spi_jun: d.spi.jun||'',
+      spi_jul: d.spi.jul||'',
+      spi_aug: d.spi.aug||'',
+      spi_sep: d.spi.sep||'',
+      spi_oct: d.spi.oct||'',
+      spi_nov: d.spi.nov||'',
+      spi_dec: d.spi.dec||'',
+      spi_status: d.spi.status,
+
+      // ── ISSUES
+      issues: JSON.stringify(d.issues || [])
+    };
+  });
+}
+
+// ─── LOCAL JSON EXPORT (FALLBACK) ────────────────────────────────────────────
+function exportLocalJSON(){
+  var rows = buildSheetRows();
+  var payload = {planner:STATE.planner, month:STATE.month, year:STATE.year, exported:new Date().toISOString(), rows:rows};
+  var blob = new Blob([JSON.stringify(payload, null, 2)], {type:'application/json'});
+  var a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'TDP_Update_' + STATE.planner.replace(/\s/g,'_') + '_' + STATE.month + STATE.year + '.json';
+  a.click();
+  toast('✓ JSON backup downloaded');
+}
+
+// ─── LOCAL STORAGE ───────────────────────────────────────────────────────────
+function saveToLocalStorage(){
+  try{ localStorage.setItem('tdp_planner_data', JSON.stringify({planner:STATE.planner,month:STATE.month,year:STATE.year,data:STATE.data})); } catch(e){}
+}
+function loadFromLocalStorage(){
+  try{
+    var saved = localStorage.getItem('tdp_planner_data');
+    if(!saved) return;
+    var obj = JSON.parse(saved);
+    if(obj.planner === STATE.planner && obj.month === STATE.month && obj.year === STATE.year){
+      STATE.data = obj.data;
+      toast('↩ Previous session data restored');
+    }
+  } catch(e){}
+}
+
+// ─── SUCCESS / RESET ─────────────────────────────────────────────────────────
+function showSuccess(sent){
+  document.getElementById('main-app').style.display = 'none';
+  document.getElementById('success-screen').style.display = 'block';
+  document.getElementById('success-msg').textContent = sent ?
+    'Your ' + STATE.projects.length + ' project(s) data for ' + STATE.month + ' ' + STATE.year + ' has been submitted to the TDP Intelligence Google Sheet. Mohamed will be notified.' :
+    'Data saved locally. Download your JSON and send to Mohamed.';
+}
+function resetApp(){
+  document.getElementById('success-screen').style.display = 'none';
+  document.getElementById('setup-screen').style.display = 'block';
+  document.getElementById('main-app').style.display = 'none';
+  STATE = {planner:'',month:'Apr',year:'2026',gasUrl:'https://script.google.com/macros/s/AKfycbwpW58odbf0gayRTpNlenaDQTq2EBYx2jl1nOV2cBHKDVD4ubZP8GtIgzf4Pn3GADGLUg/exec',projects:[],currentProject:'',currentStep:0,data:{}};
+}
+
+// ─── GAS SCRIPT DOWNLOAD ─────────────────────────────────────────────────────
+function downloadGasScript(){
+  var script = '// TDP Planner Data Receiver — Google Apps Script\n// Paste this in Extensions > Apps Script in your Google Sheet\n\nfunction doPost(e) {\n  try {\n    var sheet = SpreadsheetApp.getActiveSpreadsheet();\n    var payload = JSON.parse(e.postData.contents);\n    var rows = payload.rows;\n    \n    // Create or get sheet per month\n    var sheetName = payload.month + \'-\' + payload.year;\n    var ws = sheet.getSheetByName(sheetName);\n    if(!ws) {\n      ws = sheet.insertSheet(sheetName);\n      // Write headers from first row keys\n      if(rows.length > 0) {\n        var headers = Object.keys(rows[0]);\n        ws.getRange(1, 1, 1, headers.length).setValues([headers]);\n        ws.getRange(1, 1, 1, headers.length).setFontWeight(\'bold\').setBackground(\'#0D2137\').setFontColor(\'#ffffff\');\n      }\n    }\n    \n    // Append or update rows\n    rows.forEach(function(row) {\n      var values = Object.values(row);\n      var data = ws.getDataRange().getValues();\n      var found = false;\n      for(var i = 1; i < data.length; i++) {\n        if(data[i][0] === row.code) { // match by project code\n          ws.getRange(i+1, 1, 1, values.length).setValues([values]);\n          found = true;\n          break;\n        }\n      }\n      if(!found) ws.appendRow(values);\n    });\n    \n    // Also write to a master ALL sheet\n    var master = sheet.getSheetByName(\'ALL_DATA\');\n    if(!master) {\n      master = sheet.insertSheet(\'ALL_DATA\');\n      if(rows.length > 0) {\n        var headers = Object.keys(rows[0]);\n        master.getRange(1, 1, 1, headers.length).setValues([headers]);\n        master.getRange(1, 1, 1, headers.length).setFontWeight(\'bold\').setBackground(\'#0D2137\').setFontColor(\'#ffffff\');\n      }\n    }\n    rows.forEach(function(row) {\n      var values = Object.values(row);\n      master.appendRow(values);\n    });\n    \n    return ContentService.createTextOutput(JSON.stringify({status:\'ok\',received:rows.length})).setMimeType(ContentService.MimeType.JSON);\n  } catch(err) {\n    return ContentService.createTextOutput(JSON.stringify({status:\'error\',message:err.toString()})).setMimeType(ContentService.MimeType.JSON);\n  }\n}\n\nfunction doGet(e) {\n  return ContentService.createTextOutput(JSON.stringify({status:\'TDP Planner Receiver Active\'})).setMimeType(ContentService.MimeType.JSON);\n}\n';
+  var blob = new Blob([script], {type:'text/plain'});
+  var a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'TDP_Planner_Receiver.gs';
+  a.click();
+}
+
+// ─── UTILITIES ───────────────────────────────────────────────────────────────
+function v(id){ var el = document.getElementById(id); return el ? el.value : null; }
+function toast(msg){
+  var t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('show');
+  setTimeout(function(){ t.classList.remove('show'); }, 2500);
+}
+function showGasHelp(){ document.getElementById('gas-modal').style.display = 'block'; }
+</script>
+</body>
+</html>
